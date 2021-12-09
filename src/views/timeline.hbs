@@ -1,0 +1,792 @@
+<link rel="stylesheet" type="text/css" href="/css/chart.css">
+
+<div class="wrapper">
+    <div id="chart"></div>
+</div>
+
+<div class="chart-container">
+    <div class="svg-containery"> 
+        <svg id="yaxis"></svg>
+    </div> 
+    <div class="svg-containerx"> 
+        <svg id="xaxis"></svg>
+    </div>
+    <div class="clr"></div>
+</div>
+
+<script type="module">
+    var formalNames = {{{names}}};
+    console.log(formalNames);
+    var s = {{{s}}}.span;
+    console.log(s);
+    console.log({{{clrs}}});
+    console.log({{{fruits}}});
+    console.log({{{isDashed}}});
+    import {Runtime, Library, Inspector} from "https://cdn.jsdelivr.net/npm/@observablehq/runtime@4/dist/runtime.js";
+
+    export default function define(runtime, observer) {
+    
+        const main = runtime.module();
+        
+        main
+            .variable(observer("chart"))
+            .define(
+                "chart",
+                ["d3", "colors", "width", "height", "margin", "xAxisGenerator", "chartHeight", "yAxisGenerator", "lineData", "filterData", "lineGenerator", "xScale", "last", "yScale", "isDashed"],
+                function (d3, colors, width, height, margin, xAxisGenerator, chartHeight, yAxisGenerator, lineData, filterData, lineGenerator, xScale, last, yScale, isDashed) {
+                    
+                    const svgy = d3.select("#yaxis")
+                                .attr("width", 80)
+                                .attr("height", height);
+                    
+                    const svgx = d3.select("#xaxis")
+                                .attr("width", width)
+                                .attr("height", height);
+
+                    const gy = svgy.append("g")
+                        .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
+                    const gx = svgx.append("g")
+                        .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
+                    gx.append("g")
+                        .call(xAxisGenerator)
+                        .attr("transform", `translate(0, ${chartHeight})`)
+                        .selectAll("text")
+                            .attr("y", 0)
+                            .attr("x", 20)
+                            .attr("dy", ".35em")
+                            .attr("transform", "rotate(90)");
+
+                    gy.append("g")
+                        .call(yAxisGenerator);
+
+                    gx.selectAll(".line")
+                        .data(lineData)
+                        .enter().append("path")
+                        .attr("d", d => lineGenerator(d.data))
+                        .attr("class", d => {
+                            if(isDashed[d.key.split(" ")[0]]) {
+                                return 'dashed';
+                            } else {
+                                return 'solid';
+                            }
+                        })
+                        .style("fill", "none")
+                        .style("stroke", d => d.dark)
+                        .style("stroke-width", 2)
+                        .style("stroke-linejoin", "round");
+
+                    var indexes = [];
+                    for (let ind in isDashed) {
+                        indexes.push(ind);
+                    }
+                    var countries = [];
+                    for (let country in colors) {
+                        countries.push(country.split(" ").slice(-(country.split(" ").length-1)).join(' '));
+                    }
+                    countries = Array.from(new Set(countries));
+                    var legenddata = indexes.concat(countries);
+                    
+                    const indexlegend = gx.selectAll(".legend")
+                        .data(legenddata)
+                        .enter().append("g")
+                        .attr("transform", (d, i) => `translate(0, ${i*20})`);
+                    
+                    indexlegend.append("line")
+                        .attr("x1", width-140)
+                        .attr("x2", width-110)
+                        .attr("y1", 10)
+                        .attr("y2", 10)
+                        .style("fill", "none")
+                        .attr("class", d => {
+                            if(indexes.includes(d)) {
+                                if(isDashed[d]) {
+                                    return 'dashed';
+                                } else {
+                                    return 'solid';
+                                }
+                            } else {
+                                return 'solid';
+                            }
+                        })
+                        .style("stroke", d => {
+                            if(countries.includes(d)) {
+                                return colors[indexes[0] + " " + d].dark;
+                            } else {
+                                return "black";
+                            }
+                        })
+                        .style("stroke-width", 2)
+                        .style("stroke-linejoin", "round");
+
+
+                    indexlegend.append("text")
+                        .attr("x", width-150)
+                        .attr("y", 9)
+                        .attr("dy", ".35em")
+                        .style("text-anchor", "end")
+                        .text(function(d) {
+                            if(formalNames[d]) {
+                                return formalNames[d];
+                            }
+                            return d; 
+                        });
+                    /*
+                    const library = new Library();
+                    const svg = d3.select(library.DOM.svg(width, height));
+                    
+                    const svg = d3.select("body")
+                                .append("svg")
+                                .attr("width", width)
+                                .attr("height", height); //d3.select(library.DOM.svg(width, height));
+                    
+                    const g = svg.append("g")
+                        .attr("transform", `translate(${margin.left}, ${margin.top})`);
+                    
+                    g.append("g")
+                        .call(xAxisGenerator)
+                        .attr("transform", `translate(0, ${chartHeight})`)
+                        .selectAll("text")
+                            .attr("y", 0)
+                            .attr("x", 20)
+                            .attr("dy", ".35em")
+                            .attr("transform", "rotate(90)");
+                    g.append("g")
+                        .call(yAxisGenerator);
+                    g.selectAll(".line")
+                        .data(lineData)
+                        .enter().append("path")
+                        .attr("d", d => lineGenerator(d.data))
+                        .attr("class", d => {
+                            if(isDashed[d.key.split(" ")[0]]) {
+                                return 'dashed';
+                            } else {
+                                return 'solid';
+                            }
+                        })
+                        .style("fill", "none")
+                        .style("stroke", d => d.dark)
+                        .style("stroke-width", 2)
+                        .style("stroke-linejoin", "round");
+                    return svg.node()*/
+            });
+
+        main
+            .variable(observer("scale"))
+            .define(
+                "scale", 
+                ["d3"], 
+                function(d3) {
+                    return d3.scaleOrdinal()
+                        .domain(["a", "b", "c", "d", "e"])
+                        .range(["rgb(153, 107, 195)", "rgb(56, 106, 197)", "rgb(93, 199, 76)", "rgb(223, 199, 31)", "rgb(234, 118, 47)"])
+                });
+
+        main
+            .variable(observer("isDashed"))
+            .define(
+                "isDashed",
+                function () {
+                    return {{{isDashed}}};/* {
+                        imports: true,
+                        exports: false
+                    };*/
+                });
+
+        main
+            .variable(observer("linechunked"))
+            .define(
+                "linechunked",
+                ["xScale", "yScale", "d3", "lineChunked"],
+                function(xScale, yScale, d3, lineChunked) {
+                    return d3.lineChunked()
+                            .x(d => xScale(d.date))
+                            .y(d => yScale(d.value))
+                            .defined(function (d) { return d.value != null; })
+                            .lineStyles({
+                                stroke: (d, i) => colorScale(i),
+                            });
+            });
+        
+        main
+            .variable(observer("filterData"))
+            .define(
+                "filterData",
+                ["lineData"],
+                function(lineData) {
+                    var filtrdData = new Array()
+                    for(let i in lineData) {
+                        //filtrdData.push(lineData[i])
+                        
+
+                        var data = []
+                        for(let d in lineData[i].data) {
+                            if(lineData[i].data[d].value === 5)
+                            {
+                                filtrdData.push({})
+                                filtrdData[i].key = lineData[i].key
+                                filtrdData[i].light = lineData[i].light
+                                filtrdData[i].dark = lineData[i].dark
+                                data.push(lineData[i].data[d])
+                                data.push(lineData[1].data[0])
+                                data.push(lineData[1].data[1])
+                                data.push(lineData[1].data[2])
+                                data.push(lineData[1].data[4])
+
+                                filtrdData[i].data = data
+                            }
+                        } 
+                    }
+                    return filtrdData
+            });
+
+        main
+            .variable(observer("margin"))
+            .define(
+                "margin",
+                function() {
+                    return ({
+                            left: 50,
+                            bottom: 40,
+                            right: 250,
+                            top: 10
+                            });
+                });
+            
+        main
+            .variable(observer("height"))
+            .define(
+                "height", 
+                ["width"], 
+                function(width) {
+                    return 550;
+            });  
+
+        main
+            .variable(observer("width"))
+            .define(
+                "width", 
+                ["data"],
+                function(data) {
+                    console.log("years: ", data.length);
+                    if(data.length >= 15 && data.length <= 35) {
+                        return 700;
+                    }
+                    if(data.length >= 35 && data.length <= 100) {
+                        return 1000;
+                    }
+                    if(data.length >= 100 && data.length <= 200) {
+                        console.log('hey heyt')
+                        return 3000;
+                    }
+                    if(data.length >= 200  && data.length <= 300) {
+                        return 5000;
+                    }
+                    if(data.length >= 300) {
+                        return 8000;
+                    }
+                    return 950;
+            });               
+        
+        main 
+            .variable(observer("chartWidth"))
+            .define(
+                "chartWidth",
+                ["width", "margin"],
+                function(width, margin) {
+                    return width - margin.left - margin.right;
+            });
+            
+        main 
+            .variable(observer("chartHeight"))
+            .define(
+                "chartHeight",
+                ["height", "margin"],
+                function(height, margin) {
+                    return height - margin.top - margin.bottom;
+            });
+        
+
+        main
+            .variable(observer("xScale"))
+            .define(
+                "xScale", 
+                ["d3", "chartWidth", "data"], 
+                function(d3, chartWidth, data) {
+                    var dateRange = [data[0].date, data[data.length-1].date];
+                    //console.log(dateRange);
+                    var yyyy = "2010";
+                    var dateObj = new Date(yyyy);
+                    //console.log(dateObj);
+                    //console.log("----------------------");
+
+                    return d3.scaleTime()
+                                .domain(dateRange)//.domain([new Date(2010, 0, 1), new Date(2010, 3, 1)])
+                                .range([0, chartWidth]);
+            });
+
+        main 
+            .variable(observer("yScale"))
+            .define("yScale",
+                ["d3", "chartHeight", "minValue", "maxValue"],
+                function(d3, chartHeight, minValue, maxValue) {
+                    var min = 0;
+                    if(minValue < 0) {
+                        min = minValue;
+                    }
+                    return d3.scaleLinear()
+                            .domain([min, maxValue])//.domain([0, 35])
+                            .range([chartHeight, 0]);
+                });
+
+        main
+            .variable(observer("xAxisGenerator"))
+            .define(
+                "xAxisGenerator", 
+                ["d3", "xScale","data"], 
+                function(d3, xScale, data) {
+                    var spanname = {{{s}}}.span;
+                    var span = 1;
+                    if(spanname === "five") {
+                        span = 5;
+                    }
+                    if(spanname === "ten") {
+                        span = 10;
+                    }
+                    /*
+                    var dateRange = [];
+                    
+                    for(let i in data) {
+                        dateRange.push(data[i].date -5);
+                    }*/
+                    //return d3.axisBottom(xScale)
+                    //        .tickValues(d3.range(0, 4).map(d => new Date(2010, d, 1)));
+                    return d3.axisBottom(xScale)
+                                .ticks(d3.timeYear.every(span));
+                            /*.tickValues(d3.range(0, dateRange.length).map(d => dateRange[d]))
+                            .tickFormat(d3.timeFormat("%Y"));*/ //Date object format: https://www.carlosrendon.me/unfinished_d3_book/handling_dates.html
+            });
+
+        main   
+            .variable(observer("yAxisGenerator"))
+            .define(
+                "yAxisGenerator",
+                ["d3", "yScale", "minValue", "maxValue"],
+                function(d3, yScale, minValue, maxValue) {
+                    var min = 0;
+                    if(minValue < 0) {
+                        min = minValue; // -65,92
+                        min = Math.ceil(minValue/5)*5;
+                    }
+                    var span = 5;
+                    if(maxValue - min >= 100) {
+                        span = 10;
+                    }
+                    if(maxValue - min >= 200) {
+                        span = 20;
+                    }
+                    if(maxValue - min >= 500) {
+                        span = 50;
+                    }
+                    return d3.axisLeft(yScale)
+                        .tickValues(d3.range(min, maxValue, span));
+            });
+
+
+        main
+            .variable(observer("lineGenerator"))
+            .define(
+                "lineGenerator",
+                ["d3", "xScale", "yScale"],
+                function(d3, xScale, yScale) {
+                    return d3.line()
+                        .defined(d => !isNaN(d.value))
+                        .x(d => xScale(d.date))
+                        .y(d => yScale(d.value));
+            });
+
+
+        main
+            .variable(observer("fruits"))
+            .define(
+                "fruits", 
+                ["d3"], 
+                function(d3) {
+                    var fruits = {{{fruits}}};
+                    return fruits//{{{fruits}}};
+                    /*[ //  
+                        {
+                            Date: "2010",
+                            "imports Bananas": "5.53",
+                            "imports Blueberries": "11.55",
+                            "imports Carrots": "9.99",
+                            "exports Bananas": "12.3",
+                            "exports Blueberries": "12",
+                            "exports Carrots": "21"
+                        },
+                        {
+                            Date: "2012",
+                            "imports Bananas": "100",
+                            "imports Blueberries": "10",
+                            "imports Carrots": "8",
+                            "exports Bananas": "13",
+                            "exports Blueberries": "15",
+                            "exports Carrots": "12"
+                        }, 
+                        {
+                            Date: "2015",
+                            "imports Bananas": "4",
+                            "imports Blueberries": "13",
+                            "imports Carrots": "7",
+                            "exports Bananas": "10.5",
+                            "exports Blueberries": "16",
+                            "exports Carrots": "30"
+                        },
+                        {
+                            Date: "2017",
+                            "imports Bananas": "5",
+                            "imports Blueberries": "15",
+                            "imports Carrots": "10",
+                            "exports Bananas": "11.3",
+                            "exports Blueberries": "17",
+                            "exports Carrots": "31"
+                        },
+                        {
+                            Date: "2020",
+                            "imports Bananas": "4",
+                            "imports Blueberries": "13",
+                            "imports Carrots": "7",
+                            "exports Bananas": "10.5",
+                            "exports Blueberries": "20",
+                            "exports Carrots": "32"
+                        }
+                    ];*/
+                    //return d3.csv("https://gist.githubusercontent.com/HarryStevens/2ca674b53b0ea1ab806a3e704386c4c9/raw/3828df9890fbe0ff8b5259e2e3f9ebd1d38984bc/fruits.csv");
+                });
+
+        main
+            .variable(observer("data"))
+            .define(
+                "data", 
+                ["fruits", "parseData"], 
+                function(fruits, parseData) {
+                    return parseData(fruits);
+            });
+
+        main
+            .variable(observer("lineData"))
+            .define(
+                "lineData", 
+                ["parseLineData","data"], 
+                function(parseLineData, data) {
+                    return parseLineData(data);
+            });
+
+        main
+            .variable(observer("flatData"))
+            .define(
+                "flatData",
+                ["parseFlatData", "data"],
+                function(parseFlatData, data) {
+                    return parseFlatData(data);
+            });
+    
+        main
+            .variable(observer("voronoiData"))
+            .define(
+                "voronoiData", 
+                ["d3", "xScale", "yScale", "flatData", "chartWidth", "chartHeight", "arr"], 
+                function(d3, xScale, yScale, flatData, chartWidth, chartHeight, arr) {
+                    const v = [...new d3.Delaunay(arr.flatten(flatData.map(d => [xScale(d.date), yScale(d.value)]))).voronoi([0, 0, chartWidth, chartHeight]).cellPolygons()];
+                    for (let i = 0, l = v.length; i < l; i++){
+                        v[i].data = flatData[i];
+                    }
+                    return v;
+            });
+    
+        main 
+            .variable(observer("largestVoronoiData"))
+            .define(
+                "largestVoronoiData",
+                ["parseLargestVoronoi", "flatData", "voronoiData"],
+                function(parseLargestVoronoi, flatData, voronoiData) {
+                    return parseLargestVoronoi(flatData, voronoiData);
+            });
+                
+        main 
+            .variable(observer("colors"))
+            .define(
+                "colors",
+                function() {
+                    return {{{clrs}}};/*({  // 
+                        "imports Bananas": {
+                            light: "#fb9a99",
+                            dark: "#e31a1c"
+                        },
+                        "imports Blueberries": {
+                            light: "#a6cee3",
+                            dark: "#1f78b4"
+                        },
+                        "imports Carrots": {
+                            light: "#fdbf6f",
+                            dark: "#ff7f00"
+                        },
+                        "exports Bananas": {
+                            light: "#fb9a99",
+                            dark: "#e31a1c"
+                        },
+                        "exports Blueberries": {
+                            light: "#a6cee3",
+                            dark: "#1f78b4"
+                        },
+                        "exports Carrots": {
+                            light: "#fdbf6f",
+                            dark: "#ff7f00"
+                        }
+                    }) // {{{clrs}}};*/
+                });
+        
+        main
+            .variable(observer("firstLabel"))
+            .define(
+                "firstLabel", 
+                ["data"], 
+                function(data) {
+                    var first = "";
+                    for(let key in data[0]) {
+                        if(key !== "date") {
+                            first = key;
+                            break;
+                        }
+                    }
+                    return first;
+                });
+
+        main 
+            .variable(observer("maxValue"))
+            .define(
+                "maxValue",
+                ["data", "firstLabel"],
+                function(data, firstLabel) {
+                    var max = data[0][firstLabel];
+                    for(let i in data) { 
+                        for(let label in data[i]) {
+                            if(label !== "date") {
+                                if(data[i][label] > max) {
+                                    max = data[i][label];
+                                }
+                            }
+                        }
+                    }
+                    return max;
+                });
+
+                main 
+            .variable(observer("minValue"))
+            .define(
+                "minValue",
+                ["data", "firstLabel"],
+                function(data, firstLabel) {
+                    var min = data[0][firstLabel];
+                    for(let i in data) { 
+                        for(let label in data[i]) {
+                            if(label !== "date") {
+                                if(data[i][label] < min) {
+                                    min = data[i][label];
+                                }
+                            }
+                        }
+                    }
+                    return min;
+                });
+
+        main
+            .variable(observer("parseData"))
+            .define(
+                "parseData",
+                function() {
+                    return data => {
+                        const output = [];
+                        for (let i = 0, l = data.length; i < l; i++){
+                            let d = data[i],
+                                o = {},
+                                s = d.Date, // d.Date = "YYYY"  --prin: d.Date.split("/")
+                                yyyy = s;//+("20" + s[2]),
+                                //mm = s[0] - 1,
+                                //dd = +s[1];
+
+                            o.date = new Date(yyyy);//, mm, dd);
+                            
+                            for (let col in d){
+                                if (col !== "Date"){ 
+                                    o[col] = +d[col];    
+                                }
+                            }
+                            output.push(o);
+                        }
+                        return output;
+                    }
+                });
+
+        main
+            .variable(observer("parseLineData"))
+            .define(
+                "parseLineData",
+                ["colors"],
+                function(colors) {
+                    return data => {
+                        const output = [];
+                        let i = 0;
+                        for (let col in data[0]){
+                            if (i > 0) {
+                            let o = {
+                                key: col, 
+                                light: colors[col].light,
+                                dark: colors[col].dark,
+                                data: []
+                            };
+                            
+                            for (let i0 = 0, l0 = data.length; i0 < l0; i0++){
+                                let d0 = data[i0];
+                                o.data.push({
+                                date: d0.date,
+                                value: d0[col]
+                                });
+                            }
+                            
+                            output.push(o);
+                            }
+                            i++;
+                        }
+                        
+                        return output;
+                    }
+                });
+            
+    
+        main
+            .variable(observer("parseFlatData"))
+            .define(
+                "parseFlatData",
+                ["colors"],
+                function(colors) {
+                    return data => {
+                        const output = [],
+                                columns = [];
+                        
+                        let i = 0;
+                        for (let col in data[0]){
+                            columns.push(col);
+                            if (i > 0) {
+                                for (let i0 = 0, l0 = data.length; i0 < l0; i0++){
+                                    let d0 = data[i0];
+                                    
+                                    output.push({
+                                    date: d0.date,
+                                    value: d0[col],
+                                    key: col,
+                                    colors: colors[col]
+                                    });
+                                }
+
+                            }
+                            i++;
+                        }
+                        
+                        output.columns = columns;
+                        return output;  
+                        }
+                    });
+    
+        main 
+            .variable(observer("parseLargestVoronoi")) 
+            .define(
+                "parseLargestVoronoi",
+                ["geometric", "flatData", "voronoiData", "xScale", "yScale", "colors"],
+                function(geometric, flatData, voronoiData, xScale, yScale, colors) {
+                    return (flatData, voronoiData) => {
+                        let output = {};
+                        for (let i = 1, l = flatData.columns.length; i < l; i++){
+                            output[flatData.columns[i]] = {area: 0}
+                        }
+                        
+                        for (let i = 0, l = voronoiData.length; i < l; i++){
+                            let o = {},
+                            cell = voronoiData[i],
+                            area = geometric.polygonArea(cell),
+                            key = cell.data.key;
+                            
+                            if (area > output[key].area){
+                                output[key].centroid = geometric.polygonCentroid(cell);
+                                output[key].point = [xScale(cell.data.date), yScale(cell.data.value)];
+                                output[key].angle = geometric.lineAngle([output[key].point, output[key].centroid]);
+                                output[key].area = area;
+                                output[key].polygon = cell;
+                                output[key].colors = colors[key];
+                            }
+                        }
+                        
+                        let output2 = [];
+                        for (let key in output){
+                            output[key].key = key;
+                            output2.push(output[key]);
+                        }
+                        
+                        return output2;
+                    }
+            });
+
+
+
+        main
+            .variable(observer("last"))
+            .define(
+                "last",
+                function() {
+                    return array => array[array.length - 1];
+            });
+
+        main
+            .variable(observer("arr"))
+            .define(
+                "arr", 
+                ["require"], 
+                function(require) {
+                    return require("arraygeous@0");
+                });
+        
+
+        main
+            .variable(observer("d3"))
+            .define(
+                "d3",
+                ["require"],
+                function(require) {
+                return require("d3@6"); 
+            });
+        
+        main
+            .variable(observer("geometric"))
+            .define(
+                "geometric", 
+                ["require"], 
+                function(require) {
+                    return require("geometric@1");
+            });
+
+        return main;
+    }
+    
+    const renders = {"chart": "#chart"};
+
+    for (let i in renders)
+        renders[i] = document.querySelector(renders[i]);
+    
+    const runtime = new Runtime();
+    const main = runtime.module(define, name => {
+        if(name === "chart") {
+            return new Inspector(renders[name]);
+        }
+    });
+</script>

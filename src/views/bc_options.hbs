@@ -1,0 +1,139 @@
+<link rel="stylesheet" type="text/css" href="/css/options.css">
+{{#if csig}} 
+<div class="alert">
+  <span class="closebtn" onclick="this.parentElement.style.display='none';">&times;</span>
+  <p style="font-family: 'DejaVu Sans Mono', monospace;">No country specified.</p>
+</div>
+{{/if}}
+{{#if isig}} 
+<div class="alert">
+  <span class="closebtn" onclick="this.parentElement.style.display='none';">&times;</span>
+  <p style="font-family: 'DejaVu Sans Mono', monospace;">No index specified.</p>
+</div>
+{{/if}}
+{{#if ssig}} 
+<div class="alert">
+  <span class="closebtn" onclick="this.parentElement.style.display='none';">&times;</span>
+  <p style="font-family: 'DejaVu Sans Mono', monospace;">No interval specified.</p>
+</div>
+{{/if}}
+{{#if nodata}} 
+<div class="alert">
+  <span class="closebtn" onclick="this.parentElement.style.display='none';">&times;</span>
+  <p style="font-family: 'DejaVu Sans Mono', monospace;">No data matched to specified options.</p>
+</div>
+{{/if}}
+
+<form class="row g-3 needs-validation" method="POST" action="/barchart" novalidate>
+  <div class="form">
+    <div class="block text-center">
+      <div class="text">
+        <p class="info-text">
+          Choose a country.
+        </p>
+      </div>
+      <span class="dropdown">
+        <span class="options dropdown-toggle" data-toggle="dropdown" aria-expanded="true">Countries</span> 
+        <ul class="dropdown-menu scrollable-menu" id="c" role="menu">
+          {{#each rows}}
+          <li class="checkbox c-keep-open"><label><input type="checkbox" name="c {{this.country}}" value="1" id={{this.country}}>{{this.countryName}}</label></li>        
+          {{/each}}
+        </ul>
+      </span>
+    </div>
+    <div class="block text-center">
+      <div class="text">
+        <p class="info-text">
+          Choose up to five indexes.
+        </p>
+      </div>
+      <span class="dropdown">
+        <span class="options dropdown-toggle" data-toggle="dropdown" aria-expanded="true">Indexes</span>
+        <ul class="dropdown-menu scrollable-menu" id="i" role="menu">
+          <li class="checkbox i-keep-open"><label><input type="checkbox" name="i anemia" value="1">Anemia</label></li>
+          <li class="checkbox i-keep-open"><label><input type="checkbox" name="i child_mortality" value="1">Child Mortality</label></li>
+          <li class="checkbox i-keep-open"><label><input type="checkbox" name="i gdp" value="1">GDP</label></li>
+          <li class="checkbox i-keep-open"><label><input type="checkbox" name="i hapiscore" value="1">Hapiscore</label></li>
+          <li class="checkbox i-keep-open"><label><input type="checkbox" name="i hdi" value="1">HDI</label></li>
+          <li class="checkbox i-keep-open"><label><input type="checkbox" name="i kcal" value="1">KCal</label></li>
+          <li class="checkbox i-keep-open"><label><input type="checkbox" name="i malnutrition" value="1">Malnutrition</label></li>
+          <li class="checkbox i-keep-open"><label><input type="checkbox" name="i overweight" value="1">Overweight</label></li>
+          <li class="checkbox i-keep-open"><label><input type="checkbox" name="i severe_wasting" value="1">Severe wasting</label></li>
+          <li class="checkbox i-keep-open"><label><input type="checkbox" name="i stunting" value="1">Stunting</label></li>
+          <li class="checkbox i-keep-open"><label><input type="checkbox" name="i sugar_consumption" value="1">Sugar consumption</label></li>
+          <li class="checkbox i-keep-open"><label><input type="checkbox" name="i undernourishment" value="1">Undernourishment</label></li>
+          <li class="checkbox i-keep-open"><label><input type="checkbox" name="i underweight" value="1">Underweight</label></li> 
+        </ul>
+      </span>
+    </div>
+    <div class="block text-center">
+      <div class="text">
+        <p class="info-text">
+          Choose an interval.
+        </p>
+      </div>
+      <span class="dropdown">
+        <span class="options dropdown-toggle" data-toggle="dropdown" aria-expanded="true">Interval</span> 
+        <ul class="dropdown-menu scrollable-menu" id="y" role="menu">
+          <li class="checkbox y-keep-open"><label><input type="checkbox" name="y one" value="1" id="one">Yearly</label></li>
+          <li class="checkbox y-keep-open"><label><input type="checkbox" name="y five" value="1" id="five">Five-Year Span</label></li>
+          <li class="checkbox y-keep-open"><label><input type="checkbox" name="y ten" value="1" id="ten">Ten-Year Span</label></li>
+        </ul> 
+      </span>
+    </div>
+  </div>
+  <div class="btn-holder text-center">
+    <button class="btn btn-primary" type="submit">Submit</button>
+  </div>
+</form>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+
+<script>
+
+  var countries = {{{countries}}};
+  var cIds = []
+  for(let c in countries) {
+      cIds.push(countries[c].country);
+  }
+  
+  function cUncheck( event ) 
+  {
+      var id = event.target.id;
+      cIds.forEach( function( id ){
+          if ( id != event.target.id )
+          {
+              document.getElementById( id ).checked = false;
+          }
+      });
+  }
+  for(let c in cIds) {
+      jQuery(`#${cIds[c]}`).click(cUncheck);
+  }
+
+  const imax = 5;
+$('.i-keep-open').on('change', function(e) {
+    if($("#i input[type='checkbox']:checked").length > imax) {
+      console.log("hey hey");
+      e.target.checked = false;
+    }
+});
+
+  var spanIds = [ "one", "five", "ten" ];
+  function yUncheck( event ) 
+  {
+  var id = event.target.id;
+  spanIds.forEach( function( id ){
+      if ( id != event.target.id )
+      {
+          document.getElementById( id ).checked = false;
+      }
+  });
+  }
+
+  jQuery("#one").click(yUncheck);
+  jQuery("#five").click(yUncheck);
+  jQuery("#ten").click(yUncheck);
+
+</script>

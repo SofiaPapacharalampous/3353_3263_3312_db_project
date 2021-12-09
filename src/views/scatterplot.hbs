@@ -1,0 +1,296 @@
+<link rel="stylesheet" type="text/css" href="/css/chart.css">
+
+<div class="wrapper">
+    <div id="legend"></div>
+    <div id="chart"></div>
+</div>
+
+<div class="chart-container">
+    <div class="svg-container"> 
+        <svg id="svg"></svg>
+    </div>
+</div>
+
+<script type="module">
+    console.log({{{data}}});
+    console.log({{{x}}});
+    console.log({{{y}}});
+    import {Runtime, Library, Inspector} from "https://cdn.jsdelivr.net/npm/@observablehq/runtime@4/dist/runtime.js";
+        //import DatePicker from "material-ui-pickers/DatePicker";
+
+    export default function define(runtime, observer) {
+    
+        const main = runtime.module();
+        
+        main
+            .variable(observer("chart"))
+            .define(
+                "chart", 
+                ["d3", "x", "y", "width", "height", "xAxis", "yAxis", "grid", "data", "color", "shape"], 
+                function(d3, x, y, width, height, xAxis, yAxis, grid, data, color, shape) {                    
+                    /*const svg = d3.create("svg")
+                        .attr("viewBox", [0, 0, width, (height + 50)]);
+
+                    const svg = d3.select("#svg")
+                                    .attr("width", 80)
+                                    .attr("height", (height+50));
+*/
+                    const svg = d3.select("#svg")
+                        .attr("viewBox", [0, 0, width, (height + 50)]);
+
+                    svg.append("g")
+                        .call(xAxis);
+
+                    svg.append("g")
+                        .call(yAxis);
+
+                    svg.append("g")
+                        .call(grid);
+
+                    svg.append("g")
+                        .attr("stroke-width", 1.5)
+                        .attr("font-family", "sans-serif")
+                        .attr("font-size", 10)
+                        .selectAll("path")
+                        .data(data)
+                        .join("path")
+                        .attr("transform", d => `translate(${x(d.x)},${y(d.y)})`)
+                        .attr("fill", d => color(d.category))
+                        .attr("d", d => shape(d.category));
+
+                    return svg.node();            
+            });
+
+        main
+            .variable(observer("data"))
+            .define("data", function() {
+                var datalist = [
+                    {
+                        category: "setosa", 
+                        x: 5.1, 
+                        y: 3.5
+                    },
+                    {
+                        category: "setosa", 
+                        x: 4.9, 
+                        y: 3
+                    },
+                    {
+                        category: "setosa", 
+                        x: 4.7, 
+                        y: 3.2
+                    },
+                    {
+                        category: "setosa", 
+                        x: 4.6, 
+                        y: 3.1
+                    },
+                    {
+                        category: "setosa", 
+                        x: 5, 
+                        y: 3.6
+                    },
+                    {
+                        category: "setosa",
+                        x: 5.4, 
+                        y: 3.9
+                    },
+                    {
+                        category: "setosa",
+                        x: 4.6, 
+                        y: 3.4
+                    },
+                    {
+                        category: "setosa",
+                        x: 5, 
+                        y: 3.4
+                    },
+                    {
+                        category: "setosa", 
+                        x: 4.4, 
+                        y: 2.9
+                    },
+                    {
+                        category: "setosa", 
+                        x: 4.9, 
+                        y: 3.1
+                    },
+                    {
+                        category: "setosa", 
+                        x: 5.4, 
+                        y: 3.7
+                    }
+                ];
+                datalist = {{{data}}};
+                var x = {{{x}}};
+                var y = {{{y}}};
+                var title = {
+                    title: `${x.x} and ${y.y} - ${datalist[0].category}`
+                }
+                return Object.assign(datalist, title, x, y);
+                //return Object.assign(datalist, { title: "Heyy Hey Im a Title!!" }, { x: 'Sepal length (cm) →'}, { y: '↑ Sepal width (cm)' });
+            });
+        
+        main
+            .variable(observer("x"))
+            .define(
+                "x", 
+                ["d3", "data", "margin", "width"], 
+                function(d3, data, margin, width) {
+                    return d3.scaleLinear()
+                        .domain(d3.extent(data, d => d.x)).nice()
+                        .range([margin.left, width - margin.right])
+            })
+        
+        main
+            .variable(observer("y"))
+            .define(
+                "y", 
+                ["d3", "data", "height", "margin"], 
+                function(d3, data, height, margin) {
+                    return d3.scaleLinear()
+                        .domain(d3.extent(data, d => d.y)).nice()
+                        .range([height - margin.bottom, margin.top]);
+            })
+        
+        main
+            .variable(observer("color"))
+            .define(
+                "color", 
+                ["d3", "data"], 
+                function(d3, data) {
+                    return d3.scaleOrdinal(data.map(d => d.category), d3.schemeCategory10);
+            });
+
+    
+        main
+            .variable(observer("shape"))
+            .define(
+                "shape",
+                ["d3", "data"],
+                function(d3, data) {
+                    return d3.scaleOrdinal(data.map(d => d.category), d3.symbols.map(s => d3.symbol().type(s)()))
+            });
+    
+    
+        main
+            .variable(observer("xAxis"))
+            .define(
+                "xAxis",
+                ["d3", "height", "margin", "data", "width", "x"],
+                function(d3, height, margin, data, width, x) {
+                    return g => g
+                    .attr("transform", `translate(0,${height - margin.bottom})`)
+                    .call(d3.axisBottom(x).ticks(width / 80))
+                    .call(g => g.select(".domain").remove())
+                    .call(g => g.append("text")
+                        .attr("x", width)
+                        .attr("y", margin.bottom - 4)
+                        .attr("fill", "currentColor")
+                        .attr("text-anchor", "end")
+                        .text(data.x))
+            });
+
+        main
+            .variable(observer("yAxis"))
+            .define(
+                "yAxis",
+                ["margin", "d3", "data", "y"],
+                function(margin, d3, data, y) {
+                    return g => g
+                    .attr("transform", `translate(${margin.left},0)`)
+                    .call(d3.axisLeft(y))
+                    .call(g => g.select(".domain").remove())
+                    .call(g => g.append("text")
+                        .attr("x", -margin.left)
+                        .attr("y", 10)
+                        .attr("fill", "currentColor")
+                        .attr("text-anchor", "start")
+                        .text(data.y))
+                    .call(g => g.append("text")
+                        .attr("x", 400)
+                        .attr("y", 10)
+                        .attr("fill", "currentColor")
+                        .attr("text-anchor", "middle")  
+                        .style("font-size", "16px") 
+                        .style("font-weight", "bold")
+                        .attr("dy", "0.35em")
+                        .text(data.title))
+            });
+            
+        main 
+            .variable(observer("grid"))
+            .define(
+                "grid",
+                ["margin", "height", "y", "x", "width"],
+                function(margin, height, y, x, width) { 
+                    return g => g
+                    .attr("stroke", "currentColor")
+                    .attr("stroke-opacity", 0.1)
+                    .call(g => g.append("g")
+                    .selectAll("line")
+                    .data(x.ticks())
+                    .join("line")
+                        .attr("x1", d => 0.5 + x(d))
+                        .attr("x2", d => 0.5 + x(d))
+                        .attr("y1", margin.top)
+                        .attr("y2", height - margin.bottom))
+                    .call(g => g.append("g")
+                    .selectAll("line")
+                    .data(y.ticks())
+                    .join("line")
+                        .attr("y1", d => 0.5 + y(d))
+                        .attr("y2", d => 0.5 + y(d))
+                        .attr("x1", margin.left)
+                        .attr("x2", width - margin.right));
+                                
+            });
+    
+    
+        main
+            .variable(observer("margin"))
+            .define(
+                "margin",
+                function() {
+                    return ({top: 25, right: 20, bottom: 35, left: 40})
+            });
+
+        main
+            .variable(observer("height"))
+            .define(
+                "height", 
+                function() {
+                    return 600;
+            });
+
+
+        main
+            .variable(observer("d3"))
+            .define(
+                "d3",
+                ["require"],
+                function(require) {
+                    return require("d3@6");
+            });
+
+        
+        return main;
+    }
+
+    const renders = {"chart": "#chart", "legend": "#legend"};
+
+    for (let i in renders)
+        renders[i] = document.querySelector(renders[i]);
+    
+    const runtime = new Runtime();
+
+    const main = runtime.module(define, name => {
+        if(name === "legend") {
+            return new Inspector(renders[name]);
+        } else if(name === "chart") {
+            return new Inspector(renders[name]);
+        }
+    });
+
+</script>
+

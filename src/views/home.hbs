@@ -1,0 +1,77 @@
+<link rel="stylesheet" type="text/css" href="/css/home.css">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+<!--<h1 style="color:#FFFF; font-family: 'DejaVu Sans Mono', monospace;">Homepage</h1>-->
+<div class="welcome-container" style="color:white; font-family: 'DejaVu Sans Mono', monospace; font-size: 1.5em; text-align: center;">
+  <p>
+    Welcome to SER, the Website where you can view visualized data about health and nutrition for children under five-years-old. You can choose between Timeline, Barchart and Scatterplot charts.
+  </p>
+</div>
+
+<div class="plots">
+  <div class="block">
+    <div class="innercont1">
+      <h3 style="color:black; font-family: 'DejaVu Sans Mono', monospace;">Timeline</h3>
+      <div class="chart"><!-- onclick=window.open('/timeline-options',"_self")>-->
+        <img class="icon" src="/images/greyscale-timeline.svg" />
+      </div>
+      <div class="text">
+        <p style="color:black; font-family: 'DejaVu Sans Mono', monospace;">
+          Use the Timeline to track data evolution over time. You can choose up to four countries and up to two indexes.
+        </p>
+      </div>
+    </div>
+    <div class="innercont2">
+      <div class="col text-center">
+        <button type="button" class="btn btn-primary btn-lg btn-block" onclick=window.open('/timeline-options',"_self")>Explore</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="block">
+    <div class="innercont1">
+      <h3 style="color:black; font-family: 'DejaVu Sans Mono', monospace;">Barchart</h3>
+      <div class="chart"><!-- onclick=window.open('/barchart-options',"_self")>-->
+        <img class="icon" src="/images/greyscale-barchart.svg"/>
+      </div>
+      <div class="text">
+        <p style="color:black; font-family: 'DejaVu Sans Mono', monospace;">
+          Use the Barchart to compare up to five indexes over one country. 
+        </p>
+      </div>
+    </div>
+    <div class="innercont2">
+      <div class="col text-center">
+        <button type="button" class="btn btn-primary btn-lg btn-block" onclick=window.open('/barchart-options',"_self")>Explore</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="block">
+    <div class="innercont1">
+      <h3 style="color:black; font-family: 'DejaVu Sans Mono', monospace;">Scatterplot</h3>
+      <div class="chart"><!-- onclick=window.open('/scatterplot-options',"_self")>-->
+        <img class="icon" src="/images/greyscale-scatter.svg"/>
+      </div>
+      <div class="text">
+        <p style="color:black; font-family: 'DejaVu Sans Mono', monospace;">
+          Use the Scatterplot to find out the correlation between two indexes over one country.
+        </p>
+      </div>
+    </div>
+    <div class="innercont2">
+      <div class="col text-center">
+        <button type="button" class="btn btn-primary btn-lg btn-block" onclick=window.open('/scatterplot-options',"_self")>Explore</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="clr"></div>
+
+<!--
+<div class="clr"></div>
+<div class="palette" id="color1"></div>
+<div class="palette" id="color2"></div>
+<div class="palette" id="color3"></div>
+<div class="palette" id="color4"></div>
+<div class="palette" id="color5"></div>-->

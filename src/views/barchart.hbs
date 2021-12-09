@@ -1,0 +1,429 @@
+<link rel="stylesheet" type="text/css" href="/css/chart.css">
+
+<div class="wrapper">
+    <div id="chart"></div>
+</div>
+
+<div class="chart-container">
+    <div class="svg-containery"> 
+        <svg id="yaxis"></svg>
+    </div> 
+    <div class="svg-containerx"> 
+        <svg id="xaxis"></svg>
+    </div> 
+    <div class="clr"></div>
+</div>
+
+
+<script type="module">
+    var formalNames = {{{names}}};
+    console.log({{{data}}});
+    console.log({{{columns}}});
+
+    import {Runtime, Library, Inspector} from "https://cdn.jsdelivr.net/npm/@observablehq/runtime@4/dist/runtime.js";
+
+    export default function define(runtime, observer) {
+    
+        const main = runtime.module();
+
+        main 
+            .variable(observer("chart"))
+            .define(
+                "chart",
+                ["d3", "x0", "x1", "y", "color", "data", "width", "height", "xAxis", "yAxis", "keys", "groupKey", "legend"],
+                function (d3, x0, x1, y, color, data, width, height, xAxis, yAxis, keys, groupKey, legend) {
+                    /*
+                    const library = new Library();
+                    const svg = d3.select(library.DOM.svg(width, height));*/
+                    
+                    const svgy = d3.select("#yaxis")
+                                    .attr("width", 80)
+                                    .attr("height", height);
+                    
+                    const svgx = d3.select("#xaxis")
+                                    .attr("width", width)
+                                    .attr("height", height);
+
+                    svgx.append("g")
+                        .selectAll("g")
+                            .attr('id', 'barGroup')
+                        .data(data)
+                        .join("g")
+                            .attr("transform", d => `translate(${x0(d[groupKey])},0)`)
+                        .selectAll("rect")
+                        .data(d => keys.map(key => ({key, value: d[key]})))
+                        .join("rect")
+                            .attr("x", d => x1(d.key))
+                            .attr("y", d => {
+                                if(!d.value) {
+                                    return 
+                                } else if(d.value < 0) {
+                                    return y(0);
+                                } else {
+                                    return y(d.value);
+                                }
+                                
+                            })
+                            .attr("width", x1.bandwidth())
+                            .attr("height", d => {
+                                if(!d.value) {
+                                    return 
+                                } else if(d.value < 0) {
+                                    return -y(0) + y(d.value); //+ y(d.value))//(y(d.value) + y(0))//(y(0) - )// - y(0))
+                                } else {
+                                    return(y(0) - y(d.value));
+                                }
+                            })
+                            .attr("fill", d => color(d.key));                        
+
+                    svgx.append("g")
+                        .call(xAxis)
+                        .selectAll("text")
+                            .attr("y", 0)
+                            .attr("x", 20)
+                            //.attr("dy", ".35em")
+                            .attr("transform", "rotate(90)");
+                            
+
+                    svgy.append("g")
+                        .call(yAxis);
+                        //.attr("transform", "translate(50,-20)");
+
+                    svgx.append("g")
+                        .call(legend);
+
+                    //return svg.node();
+
+                });
+        
+        main
+            .variable(observer("legend"))
+            .define(
+                "legend",
+                ["width", "color", "margin"],
+                function (width, color, margin) {
+                    return svg => {
+                        const g = svg
+                            .attr("transform", `translate(${width},0)`)
+                            .attr("text-anchor", "end")
+                            .attr("font-family", "sans-serif")
+                            .attr("font-size", 10)
+                        .selectAll("g")
+                        .data(color.domain().slice().reverse())
+                        .join("g")
+                            .attr("transform", (d, i) => `translate(0,${i * 20})`);
+
+                        g.append("rect")
+                            .attr("x", -19)
+                            .attr("width", 19)
+                            .attr("height", 19)
+                            .attr("fill", color);
+
+                        g.append("text")
+                            .attr("class", "commentMarker")
+                            .attr("x", -24)
+                            .attr("y", 9.5)
+                            .attr("dy", "0.35em")
+                            .text(d => {
+                                var text = d.split("-");
+                                return `${formalNames[text[0]]} - ${text[1]}`;
+                            });
+                    }
+                });
+        
+        main
+            .variable(observer("x0"))
+            .define(
+                "x0",
+                ["d3", "data", "groupKey", "margin", "width"],
+                function (d3, data, groupKey, margin, width) {
+                    return d3.scaleBand()
+                        .domain(data.map(d => d[groupKey]))
+                        .rangeRound([margin.left, width - margin.right])
+                        .paddingInner(0.1)    
+                });
+
+        main 
+            .variable(observer("x1"))
+            .define(
+                "x1",
+                ["d3", "keys", "x0"],
+                function (d3, keys, x0) {
+                    return d3.scaleBand()
+                        .domain(keys)
+                        .rangeRound([0, x0.bandwidth()])
+                        .padding(0.05)   
+                });
+
+        main
+            .variable(observer("y"))
+            .define(
+                "y", 
+                ["d3", "height", "margin", "keys", "data"], 
+                function(d3, height, margin, keys, data) {
+                    return d3.scaleLinear()
+                        .domain([d3.min(data, d => {
+                            if(d3.min(keys, key => d[key]) > 0) {
+                                return 0;
+                            }
+                            return d3.min(keys, key => d[key]);
+                        }), d3.max(data, d => d3.max(keys, key => d[key]))]).nice()
+                        .rangeRound([height - margin.bottom, margin.top])
+            });
+
+        main
+            .variable(observer("color"))
+            .define(
+                "color", 
+                ["d3"], 
+                function(d3) {
+                    return d3.scaleOrdinal()
+                        .range(["#98abc5", "#6b486b", "#a05d56", "#d0743c", "#ff8c00"])
+            });
+
+        main
+            .variable(observer("xAxis"))
+            .define(
+                "xAxis", 
+                ["d3", "x0", "margin", "height"], 
+                function(d3, x0, margin, height) {
+                    return g => {
+                        g.attr("transform", `translate(0, ${height - margin.bottom})`)
+                        .call(d3.axisBottom(x0).tickSizeOuter(0))
+                        .call(g => g.select(".domain").remove())
+                    }
+            });
+
+        main
+            .variable(observer("yAxis"))
+            .define(
+                "yAxis", 
+                ["y", "d3", "margin", "data"], 
+                function(y, d3, margin, data) {
+                    return g => {
+                        g.attr("transform", `translate(${margin.left}, 0)`)
+                        .call(d3.axisLeft(y).ticks(null, "s"))
+                        .call(g => g.select(".domain").remove())
+                        .call(g => g.select(".tick:last-of-type text").clone()
+                            .attr("x", 3)
+                            .attr("text-anchor", "start")
+                            .attr("font-weight", "bold")
+                            .text(data.y))
+                    }
+            });
+
+        main
+            .variable(observer("data"))
+            .define(
+                "data",
+                function() {
+                    var datalist = {{{data}}};
+                    /*
+                    [
+                        {
+                            Year: "2000",
+                            Banana: 27,
+                            Apple: 2,
+                            Mango: 8,
+                            Berry: 15
+                        },
+                        {
+                            Year: "2001",
+                            Banana: 27,
+                            Apple: 2,
+                            Mango: 8,
+                            Berry: 15
+                        },
+                        {
+                            Year: "2002",
+                            Banana: 27,
+                            Apple: 2,
+                            Mango: 8,
+                            Berry: 15
+                        },
+                        {
+                            Year: "2003",
+                            Banana: 27,
+                            Apple: 2,
+                            Mango: 8,
+                            Berry: 15
+                        },
+                        {
+                            Year: "2004",
+                            Banana: 27,
+                            Apple: 2,
+                            Mango: 8,
+                            Berry: 15
+                        },
+                        {
+                            Year: "2005",
+                            Banana: 27,
+                            Apple: 2,
+                            Mango: 8,
+                            Berry: 15
+                        },
+                        {
+                            Year: "2006",
+                            Banana: 27,
+                            Apple: 2,
+                            Mango: 8,
+                            Berry: 15
+                        },
+                        {
+                            Year: "2007",
+                            Banana: 27,
+                            Apple: 2,
+                            Mango: 8,
+                            Berry: 15
+                        },
+                        {
+                            Year: "2008",
+                            Banana: 27,
+                            Apple: 2,
+                            Mango: 8,
+                            Berry: 15
+                        },
+                        {
+                            Year: "2009",
+                            Banana: 27,
+                            Apple: 2,
+                            Mango: 8,
+                            Berry: 15
+                        },
+                        {
+                            Year: "2010",
+                            Banana: 27,
+                            Apple: 2,
+                            Mango: 8,
+                            Berry: 15
+                        },
+                        {
+                            Year: "2011",
+                            Banana: 27,
+                            Apple: 2,
+                            Mango: 8,
+                            Berry: 15
+                        },
+                        {
+                            Year: "2012",
+                            Banana: 27,
+                            Apple: 2,
+                            Mango: 8,
+                            Berry: 15
+                        },
+                        {
+                            Year: "2013",
+                            Banana: 27,
+                            Apple: 2,
+                            Mango: 8,
+                            Berry: 15
+                        },
+                        {
+                            Year: "2014",
+                            Banana: 27,
+                            Apple: 2,
+                            Mango: 8,
+                            Berry: 15
+                        },
+                        {
+                            Year: "2015",
+                            Banana: 27,
+                            Apple: 2,
+                            Mango: 8,
+                            Berry: 15
+                        }
+                    ];
+                    */
+                    var columns = {
+                            columns: {{{columns}}}//['Year', 'Apple', 'Mango', 'Banana', 'Berry'] // ["Year", "Country1", "Country2", ...]
+                    };
+                    var data = Object.assign(datalist, columns, {y: "Percentage"});
+                    return data;
+            });
+        
+        main
+            .variable(observer("groupKey"))
+            .define(
+                "groupKey", 
+                ["data"], 
+                function(data) {
+                    return data.columns[0];
+            });
+        
+        main
+            .variable(observer("keys"))
+            .define(
+                "keys", 
+                ["data"], 
+                function(data) {
+                    return data.columns.slice(1);
+            });
+        
+        main
+            .variable(observer("margin"))
+            .define(
+                "margin", 
+                function() {
+                    return ({top: 10, right: 10, bottom: 40, left: 40});
+            });
+        
+        main
+            .variable(observer("height"))
+            .define(
+                "height", 
+                function() {
+                    return 500;
+            });
+
+        main
+            .variable(observer("width"))
+            .define(
+                "width", 
+                ["data"],
+                function(data) {
+                    console.log("bars: ", data.length);
+                    if(data.length >= 15 && data.length <= 35) {
+                        return 700;
+                    }
+                    if(data.length >= 35 && data.length <= 100) {
+                        return 1000;
+                    }
+                    if(data.length >= 100 && data.length <= 200) {
+                        console.log('hey heyt')
+                        return 3000;
+                    }
+                    if(data.length >= 200  && data.length <= 300) {
+                        return 5000;
+                    }
+                    if(data.length >= 300) {
+                        return 8000;
+                    }
+                    return 300;
+            });
+
+
+        main
+            .variable(observer("d3"))
+            .define(
+                "d3",
+                ["require"],
+                function(require) {
+                    return require("d3@6");
+            });
+
+        return main;
+    }
+
+    const renders = {"chart": "#chart"};
+
+    for (let i in renders)
+        renders[i] = document.querySelector(renders[i]);
+    
+    const runtime = new Runtime();
+
+    const main = runtime.module(define, name => {
+        if(name === "chart") {
+            return new Inspector(renders[name]);
+        }
+    });
+</script>

@@ -1,0 +1,52 @@
+#chart {
+    display: none;
+}
+svg {
+    margin-left: 30px;
+    margin-bottom: 30px;
+}
+
+.chart-container {
+    margin-top:100px;
+    background-color:  rgba(255, 255, 255, 0.89);
+    width:100%;
+    border:1px solid #ccc;
+    padding:20px;
+    border-radius: 10px;
+    margin-right: 20px;
+}
+
+.svg-containery {
+    float:left;
+    width:10%;
+    box-sizing:border-box;
+}
+
+.svg-containerx {
+    float:left;
+    width:80%;
+    box-sizing:border-box;
+    overflow-x: scroll;
+}
+
+.svg-container {
+    margin-top: 60px;
+    margin-left: 20px;
+    margin-right: 20px;
+}
+
+.clr{
+    clear:both;
+}
+
+/*Timeline*/
+.solid {
+    stroke: solid;
+}
+.dashed {
+    stroke-dasharray: 5.5;
+}
+.rectlegend {
+    width: 15px;
+    border-bottom: 15px;
+}
